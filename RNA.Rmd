@@ -1,0 +1,43 @@
+---
+title: "RNA"
+author: "Cristopher Barrios, Carlos Daniel Estrada"
+date: "2023-04-28"
+output:
+  html_document: default
+  pdf_document: default
+---
+### 1. Use los mismos conjuntos de entrenamiento y prueba que utilizó en las hojas anteriores.
+
+### 2. Seleccione como variable respuesta la que creó con las categorías del precio de la casa.
+
+### 3. Genere dos modelos de redes neuronales que sean capaz de clasificar usando la variable respuesta que categoriza las casas en baratas, medias y caras. Estos modelos deben tener diferentes topologías y funciones de activación.
+
+### 4. Use los modelos para predecir el valor de la variable respuesta
+
+### 5. Haga las matrices de confusión respectivas.
+
+### 6. Compare los resultados obtenidos con los diferentes modelos de clasificación usando redes neuronales en cuanto a efectividad, tiempo de procesamiento y equivocaciones (donde el algoritmo se equivocó más, donde se equivocó menos y la importancia que tienen los errores).
+
+### 7. Analice si no hay sobreajuste en los modelos. Use para esto la curva de aprendizaje.
+
+### 8. Para el modelo elegido de clasificación tunee los parámetros y discuta si puede mejorar todavía el modelo sin llegar a sobre ajustarlo.
+
+### 9. Seleccione ahora el SalesPrice como variable respuesta.
+
+### 10. Genere dos modelos de regresión con redes neuronales con diferentes topologías y funciones de activación para predecir el precio de las casas.
+
+### 11. Compare los dos modelos de regresión y determine cuál funcionó mejor para predecir el precio de las casas.
+
+### 12. Analice si no hay sobreajuste en los modelos. Use para esto la curva de aprendizaje.
+
+### 13. Para el modelo elegido de regresión tunee los parámetros y discuta si puede mejorar todavía el modelo sin llegar a sobre ajustarlo.
+
+### 14. Compare la eficiencia del mejor modelo de RNA con los resultados obtenidos con los algoritmos de las hojas de trabajo anteriores. ¿Cuál es mejor para predecir? ¿Cuál se demoró más en procesar?
+
+### 15. Compare los resultados del mejor modelo de esta hoja para clasificar con los resultados de los algoritmos usados para clasificar de las hojas de trabajo anteriores
+
+### 16. Compare los resultados del mejor modelo para predecir el precio de venta con los resultados de los algoritmos usados para el mismo propósito de las hojas de trabajo anteriores.
+
+### 17. Ahora que ha usado todos los modelos que hemos visto y aplicados al conjunto de datos llegue a conclusiones sobre cual es o cuales son los mejores modelos para clasificar dadas las características del conjunto de datos. ¿Cuál o cuáles son los mejores para predecir el precio de las casas? Una tabla de resumen con las métricas de los modelos le puede resultar muy útil para esto.
+
+### 18. Genere un informe de los resultados y las explicaciones
