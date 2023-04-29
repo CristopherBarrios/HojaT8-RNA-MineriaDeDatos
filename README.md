@@ -8,6 +8,7 @@ Creado por:
 
 [Instrucciones](./HojadeTrabajo8.RNA.2023.pdf)
 
+[PDF - Informe](./RNA.pdf)
 [HTML - Informe](./RNA.html)
 
 [RMD - Codigo](./RNA.Rmd)

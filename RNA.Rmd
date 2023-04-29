@@ -6,27 +6,178 @@ output:
   html_document: default
   pdf_document: default
 ---
+librerias
+```{r message=FALSE, warning=FALSE}
+library(caret)
+library(nnet)
+library(RWeka)
+#library(neural)
+library(dummy)
+library(neuralnet)
+library(plotly)
+library(MASS)
+library(neuralnet)
+library(ggplot2)
+library(PerformanceAnalytics)
+```
+
 ### 1. Use los mismos conjuntos de entrenamiento y prueba que utilizó en las hojas anteriores.
+```{r}
+datos = read.csv("./train.csv")
+```
 
 ### 2. Seleccione como variable respuesta la que creó con las categorías del precio de la casa.
+```{r}
+set.seed(123)
+
+#División de 3 
+datos[is.na(datos)] <- 0
+datos$tipoDeCasa = as.numeric(as.character( cut(datos$SalePrice,c(0,145000,205000,410000), labels = c(1, 2, 3))))
+
+
+completeFun <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+datos <- completeFun(datos, "tipoDeCasa")
+
+#Cuantitativos
+scndselect <- subset(datos, select = c(2,4,5,18,19,20,21,27,35,37,38,39,44,45,46,47,48,49,50,51,52,53,55,57,60,62,63,67,68,69,70,71,72,76,77,78, 81, 82))
+scndselect[is.na(scndselect)] <- 0
+```
 
 ### 3. Genere dos modelos de redes neuronales que sean capaz de clasificar usando la variable respuesta que categoriza las casas en baratas, medias y caras. Estos modelos deben tener diferentes topologías y funciones de activación.
 
-### 4. Use los modelos para predecir el valor de la variable respuesta
+#### Con caret
+```{r message=FALSE, warning=FALSE, results='hide'}
+porcentaje<-0.7
+corte <- sample(nrow(scndselect),nrow(scndselect)*porcentaje)
+train<-scndselect[corte,]
+test<-scndselect[-corte,]
+modeloCaret <- train(tipoDeCasa~., data=train, method="nnet",preProcess=c("scale","center"), na.action = na.omit, linout = TRUE)
+```
 
-### 5. Haga las matrices de confusión respectivas.
+```{r}
+modeloCaret
+```
+
+#### con NNet
+```{r}
+modelo.nn2 <- nnet(tipoDeCasa~.,data = scndselect,subset = corte, size=25, rang=0.1, decay=5e-4, maxit=300, linout = TRUE)
+process_timeNNet1 <- proc.time()
+prediccion2 <- round(predict(modelo.nn2, newdata = test[,1:37]))
+process_timeNNet1 <- proc.time() - process_timeNNet1
+```
+
+### 4. Use los modelos para predecir el valor de la variable respuesta / 5. Haga las matrices de confusión respectivas.
+
+#### Con caret
+```{r echo=FALSE, warning=FALSE}
+process_timeC1 <- proc.time()
+test$prediccionCaret <- predict(modeloCaret, newdata = test)
+process_timeC1 <- proc.time() - process_timeC1
+test$prediccionCaret[] <- round(test$prediccionCaret, digits = 0)
+u <- union(test$prediccionCaret,test$tipoDeCasa)
+t <- table(factor(test$prediccionCaret, u), factor(test$tipoDeCasa, u))
+cfmCaret<-confusionMatrix(t)
+cfmCaret
+```
+
+
+#### con NNet
+```{r echo=FALSE}
+test$prediccion2<-prediccion2 #valor de la predicción
+u <- union(test$prediccion2,test$tipoDeCasa)
+t <- table(factor(test$prediccion2, u), factor(test$tipoDeCasa, u))
+cfm<-confusionMatrix(t)
+cfm
+```
 
 ### 6. Compare los resultados obtenidos con los diferentes modelos de clasificación usando redes neuronales en cuanto a efectividad, tiempo de procesamiento y equivocaciones (donde el algoritmo se equivocó más, donde se equivocó menos y la importancia que tienen los errores).
+
+Tiempo de ejecucion:
+
+#### Con caret
+```{r echo=FALSE}
+process_timeC1
+```
+
+#### con NNet
+```{r echo=FALSE}
+process_timeNNet1
+```
+
+Al comparar ambos modelos de clasificación, podemos concluir que el obtenido mediante la librería Caret fue el mejor debido a que logró una precisión significativamente mayor en comparación con el modelo obtenido mediante la librería NNet. El modelo de NNet resultó más complicado de ajustar en términos de las capas y la configuración de la red neuronal, y con los mismos valores utilizados en el modelo de Caret, resultó difícil obtener una precisión alta. Por otro lado, el segundo modelo mencionado tuvo una producción mucho menor y no fue tan efectivo, lo que se evidencia en la matriz de confusión.
+
 
 ### 7. Analice si no hay sobreajuste en los modelos. Use para esto la curva de aprendizaje.
 
 ### 8. Para el modelo elegido de clasificación tunee los parámetros y discuta si puede mejorar todavía el modelo sin llegar a sobre ajustarlo.
 
 ### 9. Seleccione ahora el SalesPrice como variable respuesta.
+```{r}
+#normalizacion
+maxs      <- apply(train, 2, max)
+mins      <- apply(train, 2, min)
+datos_normalized <- as.data.frame(scale(scndselect, center = mins, scale = maxs - mins))
+train_normalized <- datos_normalized[corte, ]
+test_normalized  <- datos_normalized[-corte, ]
+```
+
 
 ### 10. Genere dos modelos de regresión con redes neuronales con diferentes topologías y funciones de activación para predecir el precio de las casas.
 
+Con NNet
+```{r}
+modelo.nnet <- neuralnet(SalePrice~., data = train_normalized, hidden = c(7,5), threshold = 0.05, algorithm     = "rprop+")
+```
+
+```{r}
+#Prediccion
+pr.nnet   <- compute(modelo.nnet,within(test_normalized,rm(SalePrice)))
+```
+
+Con Caret
+
+```{r message=FALSE, warning=FALSE, results='hide'}
+modeloCaretR <- train(SalePrice~., data=train_normalized, method="nnet", na.action = na.omit, linout = TRUE)
+prediccionCaretR <- predict(modeloCaretR, newdata = test_normalized)
+SalePrice.predict2 <- prediccionCaretR*(max(datos$SalePrice)-min(datos$SalePrice))+min(datos$SalePrice)
+SalePrice.real2    <- (test_normalized$SalePrice)*(max(datos$SalePrice)-min(datos$SalePrice))+min(datos$SalePrice)
+SalePrice_predict_vs_real2 <- data.frame(SalePrice.predict2, SalePrice.real2)
+SalePrice_predict_vs_real2$accuracy2 <- 0
+SalePrice_predict_vs_real2$accuracy2[] <- (1 - abs(SalePrice_predict_vs_real2$SalePrice.real2 - SalePrice_predict_vs_real2$SalePrice.predict2)/SalePrice_predict_vs_real2$SalePrice.real2)*100
+```
+
+---------------------------------------
+Accuracy con NNet
+```{r}
+#desnormaliza
+SalePrice.predict <- pr.nnet$net.result*(max(datos$SalePrice)-min(datos$SalePrice))+min(datos$SalePrice)
+SalePrice.real    <- (test_normalized$SalePrice)*(max(datos$SalePrice)-min(datos$SalePrice))+min(datos$SalePrice)
+
+# Accuracy mediante error
+SalePrice_predict_vs_real <- data.frame(SalePrice.predict, SalePrice.real)
+SalePrice_predict_vs_real$accuracy <- 0
+SalePrice_predict_vs_real$accuracy[] <- (1 - abs(SalePrice_predict_vs_real$SalePrice.real - SalePrice_predict_vs_real$SalePrice.predict)/SalePrice_predict_vs_real$SalePrice.real)*100
+```
+
+```{r}
+mean(SalePrice_predict_vs_real$accuracy)
+```
+
+
+
 ### 11. Compare los dos modelos de regresión y determine cuál funcionó mejor para predecir el precio de las casas.
+```{r}
+summary(SalePrice_predict_vs_real2$accuracy2)
+xvar <- 1:NROW(SalePrice_predict_vs_real2$accuracy2)
+datapr<- data.frame("xvar"=xvar,"accuracy2"=SalePrice_predict_vs_real2$accuracy2,"accuracy"=SalePrice_predict_vs_real$accuracy)
+fig2 <- plot_ly(datapr, x = ~xvar, y = ~accuracy, name = 'NeuralNet', type = 'scatter', mode = 'lines') 
+fig2 <- fig2 %>% add_trace( y = ~accuracy2, name = 'Caret', mode = 'lines+markers')
+fig2
+```
+
 
 ### 12. Analice si no hay sobreajuste en los modelos. Use para esto la curva de aprendizaje.
 
@@ -34,10 +185,52 @@ output:
 
 ### 14. Compare la eficiencia del mejor modelo de RNA con los resultados obtenidos con los algoritmos de las hojas de trabajo anteriores. ¿Cuál es mejor para predecir? ¿Cuál se demoró más en procesar?
 
+#### Naive Bayes 
+![](./img/Naivebayes.PNG)
+
+#### Arbol de Desicion
+![](./img/arbolDeDesicion.PNG)
+
+#### Regresion Linear
+![](./img/RegresionLinear.PNG)
+
+#### SVM
+- Lineal
+![](./img/linear.PNG)
+
+- Radial
+![](./img/radial.PNG)
+
+- Polinomial
+![](./img/polinomial.PNG)
+
+```{r}
+modelos_prediccion <- c("Naive Bayes", "Regresion Lineal", "Arbol de Clasificacion", "SVM", "Neural Net(Caret)", "Neural Net(NNet)")
+accuracies <- c(76.69, 70.05, 73.61, 83.99, 85.85, 85.61)
+comparacion_prediccion <- data.frame(modelos_prediccion, accuracies)
+fig_1 <- plot_ly(comparacion_prediccion, x = ~modelos_prediccion, y = ~accuracies, type = 'bar', text = paste(signif(accuracies,digits = 4),"%"), textposition = 'auto', name = '')
+fig_1<- fig_1 %>% layout(title="Precision del modelo vs Modelo Aplicado",yaxis = list(title = 'Accuracy(%)'),xaxis = list(title = 'Modelo Aplicado'), barmode = 'group')
+fig_1
+```
+
 ### 15. Compare los resultados del mejor modelo de esta hoja para clasificar con los resultados de los algoritmos usados para clasificar de las hojas de trabajo anteriores
 
 ### 16. Compare los resultados del mejor modelo para predecir el precio de venta con los resultados de los algoritmos usados para el mismo propósito de las hojas de trabajo anteriores.
 
 ### 17. Ahora que ha usado todos los modelos que hemos visto y aplicados al conjunto de datos llegue a conclusiones sobre cual es o cuales son los mejores modelos para clasificar dadas las características del conjunto de datos. ¿Cuál o cuáles son los mejores para predecir el precio de las casas? Una tabla de resumen con las métricas de los modelos le puede resultar muy útil para esto.
 
-### 18. Genere un informe de los resultados y las explicaciones
+### 18. Genere un informe de los resultados y las explicaciones.
+
+Al contrastar los resultados obtenidos al emplear diversos modelos de clasificación basados en redes neuronales para estimar la variable "tipoDeCasa", se puede observar que las redes neuronales construidas mediante la librería Caret obtuvieron una mayor eficacia, logrando una precisión del 85,85%, con una pequeña diferencia de 0,24% en comparación con las predicciones hechas con la librería NNet, que tuvo una precisión del 85,61%. Aunque no se puede determinar con certeza cuál modelo es el mejor, sí podemos afirmar que el modelo de redes neuronales elaborado con Caret nos proporcionó los mejores resultados. Cabe destacar que este modelo fue el más efectivo y, al analizar el tiempo de ejecución, se observa que ambos algoritmos tienen una demora similar. Comparando con otros modelos creados en hojas de trabajo anteriores, se puede concluir que este modelo tuvo los índices de exactitud más altos obtenidos hasta ahora. Además, se obtuvieron los tiempos de ejecución más cortos.
+
+Se observó que la función de activación también fue efectiva en la predicción de la variable de respuesta “SalePrice”. La utilización de diferentes funciones de activación y la normalización de los datos pueden afectar significativamente el rendimiento de los modelos de redes neuronales. Es importante destacar que la variable de respuesta “SalePrice” es una variable continua, lo que significa que el valor puede variar dentro de un rango determinado. Por lo tanto, es importante que la función de activación utilizada sea adecuada para predecir valores continuos
+
+En resumen, no se pudo establecer un modelo ganador debido a la falta de conocimiento exhaustivo en cada uno de los modelos utilizados. Es probable que se hubiera necesitado más tiempo para probar todas las posibles combinaciones y así determinar cuál modelo es el más eficiente para esta base de datos. Es importante destacar que todos los algoritmos utilizados tuvieron una precisión superior al 70%, pero las redes neuronales resultaron ser más efectivas en la predicción. Sin embargo, no se puede descartar la posibilidad de que los otros algoritmos puedan mejorar su precisión en el futuro.
+
+
+Finalmente, al experimentar con un modelo diferente, la variable objetivo fue el precio de venta, con el objetivo de evaluar cómo la producción varía al cambiar la topología o función utilizada. En este caso, se empleó una función de tipo entero, en contraposición al modelo anterior que utilizaba una función de tipo binario (0 o 1) para determinar la pertenencia a cada grupo.
+
+
+Además, al comparar los resultados de diferentes modelos de clasificación basados en redes neuronales para predecir la variable "tipoDeCasa", se encontró que las redes neuronales construidas con la biblioteca Caret tuvieron una mayor eficacia, con una precisión del 85,85%, en comparación con las predicciones hechas con NNet, que tuvo una precisión del 85,61%. El modelo de redes neuronales elaborado con Caret también tuvo el tiempo de ejecución más corto en comparación con otros modelos anteriores. Aunque no se puede determinar con certeza cuál modelo es el mejor debido a la falta de conocimiento exhaustivo en cada uno de los modelos utilizados, se puede concluir que los modelos de redes neuronales resultaron ser más efectivos en la predicción en general. Es importante destacar que todos los algoritmos utilizados tuvieron una precisión superior al 70%.
+
+Después de comparar los resultados de varios modelos de clasificación con redes neuronales para predecir la variable de respuesta "SalePrice", se encontró que el modelo de red neuronal creado con Caret tuvo un rendimiento más efectivo en comparación con el modelo de NNet, con una efectividad del 93.59% en comparación con el 91.40% del otro modelo. Al observar la gráfica de dispersión de datos, se puede ver que las predicciones realizadas por el modelo de NNet tienen más dispersión en comparación con las predicciones de Caret, lo que afecta la efectividad promedio. En ambos casos, se encontró que el modelo de red neuronal más efectivo fue el creado con Caret. Es posible que la función de activación predeterminada utilizada, que es la sigmoide, haya influido en el rendimiento, así como la manera en que se normalizaron los datos.
