@@ -10,7 +10,7 @@ librerias
 ```{r message=FALSE, warning=FALSE}
 library(caret)
 library(nnet)
-library(RWeka)
+#library(RWeka)
 #library(neural)
 library(dummy)
 library(neuralnet)
@@ -159,7 +159,8 @@ Como podemos obervar segun las graficas es que el modelo de Caret es un buen mod
 
 ### 8. Para el modelo elegido de clasificación tunee los parámetros y discuta si puede mejorar todavía el modelo sin llegar a sobre ajustarlo.
 ```{r}
-
+modelo<-glm(Cara~., data = train[,c('SalePrice','GrLivArea','Cara','LotFrontage','LotArea','BsmtQual','PoolArea')],family = binomial(), maxit=100)
+modelo
 ```
 
 El modelo generado con caret arrojó una precisión del 91.8%, lo cual indica que es capaz de clasificar adecuadamente las casas en las tres categorías (baratas, medias y caras). La matriz de confusión muestra que el modelo clasificó correctamente la mayoría de las casas en las tres categorías, con algunas excepciones. Por ejemplo, el modelo clasificó 11 casas como medias cuando en realidad eran baratas, y 9 casas como baratas cuando en realidad eran medias.
