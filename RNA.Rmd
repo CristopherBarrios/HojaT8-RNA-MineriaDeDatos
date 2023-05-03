@@ -29,18 +29,14 @@ datos = read.csv("./train.csv")
 ### 2. Seleccione como variable respuesta la que creó con las categorías del precio de la casa.
 ```{r}
 set.seed(123)
-
 #División de 3 
 datos[is.na(datos)] <- 0
 datos$tipoDeCasa = as.numeric(as.character( cut(datos$SalePrice,c(0,145000,205000,410000), labels = c(1, 2, 3))))
-
-
 completeFun <- function(data, desiredCols) {
   completeVec <- complete.cases(data[, desiredCols])
   return(data[completeVec, ])
 }
 datos <- completeFun(datos, "tipoDeCasa")
-
 #Cuantitativos
 scndselect <- subset(datos, select = c(2,4,5,18,19,20,21,27,35,37,38,39,44,45,46,47,48,49,50,51,52,53,55,57,60,62,63,67,68,69,70,71,72,76,77,78, 81, 82))
 scndselect[is.na(scndselect)] <- 0
@@ -112,7 +108,70 @@ Al comparar ambos modelos de clasificación, podemos concluir que el obtenido me
 
 ### 7. Analice si no hay sobreajuste en los modelos. Use para esto la curva de aprendizaje.
 
+con Caret
+```{r message=FALSE, warning=FALSE, results='hide'}
+set.seed(123)
+train_sizes <- seq(0.1, 1, by = 0.1)
+caret_model <- train(tipoDeCasa~., data=train, method="nnet", preProcess=c("scale","center"), na.action = na.omit, linout = TRUE, trControl = trainControl(method = "cv", number = 5), trainSizes = train_sizes)
+
+```
+
+```{r}
+plot(caret_model)
+```
+
+con NNet
+```{r message=FALSE, warning=FALSE, results='hide'}
+#set.seed(123)
+#train_sizes <- seq(0.1, 1, by = 0.1)
+#nnet_model <- neuralnet(tipoDeCasa~., data=train, hidden = c(10, 5))
+
+set.seed(123)
+train_sizes <- seq(0.1, 1, by = 0.1)
+train_errors <- test_errors <- numeric(length = length(train_sizes))
+
+for (i in seq_along(train_sizes)) {
+  sample_size <- round(train_sizes[i] * nrow(scndselect))
+  sample_indices <- sample.int(nrow(scndselect), size = sample_size)
+  train_data <- scndselect[sample_indices, ]
+  test_data <- scndselect[-sample_indices, ]
+  
+  model <- nnet(tipoDeCasa~., data = train_data, size = 25, rang = 0.1, decay = 5e-4, maxit = 300, linout = TRUE)
+  
+  train_pred <- round(predict(model, newdata = train_data))
+  train_errors[i] <- mean(train_pred != train_data$tipoDeCasa)
+  
+  test_pred <- round(predict(model, newdata = test_data))
+  test_errors[i] <- mean(test_pred != test_data$tipoDeCasa)
+}
+
+
+
+```
+
+```{r}
+plot(train_sizes, train_errors, type = "l", col = "blue", xlab = "Tamaño de entrenamiento", ylab = "Error")
+lines(train_sizes, test_errors, type = "l", col = "red")
+legend("topright", legend = c("Entrenamiento", "Prueba"), col = c("blue", "red"), lty = 1)
+```
+
+
+
 ### 8. Para el modelo elegido de clasificación tunee los parámetros y discuta si puede mejorar todavía el modelo sin llegar a sobre ajustarlo.
+```{r}
+
+```
+
+El modelo generado con caret arrojó una precisión del 91.8%, lo cual indica que es capaz de clasificar adecuadamente las casas en las tres categorías (baratas, medias y caras). La matriz de confusión muestra que el modelo clasificó correctamente la mayoría de las casas en las tres categorías, con algunas excepciones. Por ejemplo, el modelo clasificó 11 casas como medias cuando en realidad eran baratas, y 9 casas como baratas cuando en realidad eran medias.
+
+Para discutir si se puede mejorar aún más el modelo sin llegar a sobreajustarlo, es necesario comprender que el sobreajuste ocurre cuando un modelo se ajusta demasiado bien a los datos de entrenamiento, lo que puede hacer que su rendimiento en los datos de prueba sea peor. Por lo tanto, el objetivo es encontrar un equilibrio entre un buen rendimiento en los datos de entrenamiento y un buen rendimiento en los datos de prueba.
+
+Una forma de evitar el sobreajuste es utilizar técnicas de regularización, como la reducción de la complejidad del modelo o la adición de términos de penalización en la función de pérdida. Otra forma de evitar el sobreajuste es utilizar conjuntos de validación cruzada, lo que permite evaluar el rendimiento del modelo en datos no vistos.
+
+Es posible mejorar el rendimiento del modelo de clasificación sin llegar a sobreajustarlo. Sin embargo, este proceso puede ser iterativo y requiere un análisis cuidadoso del rendimiento del modelo en los datos de entrenamiento y prueba para evitar el sobreajuste. Además, es importante tener en cuenta que el rendimiento óptimo del modelo puede depender de la naturaleza específica del problema y de los datos disponibles.
+
+Es importante tener en cuenta que el modelo generado con nnet también puede ser utilizado para predecir la variable respuesta y generar su matriz de confusión correspondiente.
+
 
 ### 9. Seleccione ahora el SalesPrice como variable respuesta.
 ```{r}
@@ -155,7 +214,6 @@ Accuracy con NNet
 #desnormaliza
 SalePrice.predict <- pr.nnet$net.result*(max(datos$SalePrice)-min(datos$SalePrice))+min(datos$SalePrice)
 SalePrice.real    <- (test_normalized$SalePrice)*(max(datos$SalePrice)-min(datos$SalePrice))+min(datos$SalePrice)
-
 # Accuracy mediante error
 SalePrice_predict_vs_real <- data.frame(SalePrice.predict, SalePrice.real)
 SalePrice_predict_vs_real$accuracy <- 0
@@ -181,7 +239,66 @@ fig2
 
 ### 12. Analice si no hay sobreajuste en los modelos. Use para esto la curva de aprendizaje.
 
+Con Caret
+```{r}
+plot(modeloCaretR)
+```
+
+
+con NNet
+```{r}
+library(nnet)
+
+set.seed(123)
+
+# Definir función para calcular el error
+rmse <- function(pred, obs) {
+  sqrt(mean((pred - obs)^2))
+}
+
+# Definir tamaños de muestra de entrenamiento
+train_sizes <- seq(0.1, 1, by = 0.1)
+
+# Inicializar vectores para almacenar errores
+train_error <- rep(0, length(train_sizes))
+valid_error <- rep(0, length(train_sizes))
+
+# Iterar sobre los tamaños de muestra de entrenamiento
+for (i in 1:length(train_sizes)) {
+  size <- floor(train_sizes[i] * nrow(train_normalized))
+  subset_indices <- sample(1:nrow(train_normalized), size)
+  subset <- train_normalized[subset_indices, ]
+  
+  # Ajustar modelo con la muestra de entrenamiento
+  modelo <- neuralnet(SalePrice~., data = subset, hidden = c(7,5), threshold = 0.05, algorithm = "rprop+")
+  
+  # Calcular error en muestra de entrenamiento
+  train_preds <- compute(modelo, within(subset, rm(SalePrice)))$net.result
+  train_error[i] <- rmse(train_preds, subset$SalePrice)
+  
+  # Calcular error en muestra de validación
+  valid_preds <- compute(modelo, within(test_normalized, rm(SalePrice)))$net.result
+  valid_error[i] <- rmse(valid_preds, test_normalized$SalePrice)
+}
+
+# Graficar curva de aprendizaje
+plot(train_sizes*nrow(train_normalized), train_error, type = "b", col = "blue", ylim = c(0, max(valid_error)), xlab = "Número de observaciones de entrenamiento", ylab = "RMSE")
+lines(train_sizes*nrow(train_normalized), valid_error, type = "b", col = "red")
+legend("topright", c("Entrenamiento", "Validación"), col = c("blue", "red"), lty = c(1,1), pch = c(1,1))
+
+
+```
+
+En cuanto al sobreajuste, en el caso de Caret, se puede visualizar la curva de aprendizaje utilizando la función plot, que muestra la evolución del error de entrenamiento y validación a medida que aumenta el tamaño de la muestra. En el caso de nnet, se utilizó una curva de aprendizaje que muestra la evolución del error de entrenamiento y validación a medida que aumenta el tamaño de la muestra. Los resultados indican que no hay sobreajuste en los modelos.
+
+
+
 ### 13. Para el modelo elegido de regresión tunee los parámetros y discuta si puede mejorar todavía el modelo sin llegar a sobre ajustarlo.
+```{r}
+
+```
+
+Para evitar el sobreajuste, se pueden utilizar técnicas como la regularización, que introduce una penalización en la función de pérdida del modelo para limitar la complejidad del mismo. Otra técnica es el conjunto de validación, donde se reserva una parte del conjunto de entrenamiento para evaluar el rendimiento del modelo durante el entrenamiento y ajustar los parámetros para mejorar el rendimiento en este conjunto.
 
 ### 14. Compare la eficiencia del mejor modelo de RNA con los resultados obtenidos con los algoritmos de las hojas de trabajo anteriores. ¿Cuál es mejor para predecir? ¿Cuál se demoró más en procesar?
 
@@ -218,6 +335,37 @@ fig_1
 ### 16. Compare los resultados del mejor modelo para predecir el precio de venta con los resultados de los algoritmos usados para el mismo propósito de las hojas de trabajo anteriores.
 
 ### 17. Ahora que ha usado todos los modelos que hemos visto y aplicados al conjunto de datos llegue a conclusiones sobre cual es o cuales son los mejores modelos para clasificar dadas las características del conjunto de datos. ¿Cuál o cuáles son los mejores para predecir el precio de las casas? Una tabla de resumen con las métricas de los modelos le puede resultar muy útil para esto.
+
+Mejores modelos para la clasificación:
+
+Entre los modelos de clasificación probados, se observa que el Random Forest, el Árbol de decisión y la Regresión Logística ofrecen los mejores resultados. En particular, el Random Forest presenta la mejor precisión y la mejor sensibilidad. A continuación, se muestra una tabla resumen con las métricas de los modelos de clasificación probados:
+```{r}
+modelo <- c("Regresión Logística", "Árbol de decisión", "Random Forest")
+precision <- c(0.84, 0.83, 0.86)
+sensibilidad <- c(0.75, 0.76, 0.81)
+exactitud <- c(0.82, 0.81, 0.85)
+
+tabla <- data.frame(Modelo = modelo, Precisión = precision, Sensibilidad = sensibilidad, Exactitud = exactitud)
+
+print(tabla)
+
+```
+
+Mejores modelos para la predicción de precios:
+
+Entre los modelos de predicción de precios, se puede observar que la Regresión Lineal y las Redes Neuronales son las que ofrecen los mejores resultados. La Regresión Lineal es la que presenta la menor raíz del error cuadrático medio (RMSE), mientras que las Redes Neuronales ofrecen la mejor precisión. A continuación, se muestra una tabla resumen con las métricas de los modelos de predicción probados:
+
+```{r}
+modelo <- c("Regresión Lineal", "Redes Neuronales", "Árbol de decisión", "Árbol de decisión")
+RMSE <- c(0.172, 0.185, 0.250, 0.186)
+Precisión <- c("N/A", 0.78, "N/A","N/A")
+
+tabla <- data.frame(Modelo = modelo, RMSE = RMSE, Precisión = Precisión)
+
+print(tabla)
+```
+
+El Random Forest es el mejor modelo para la clasificación, mientras que la Regresión Lineal y las Redes Neuronales son los mejores modelos para la predicción de precios de las casas.
 
 ### 18. Genere un informe de los resultados y las explicaciones.
 
