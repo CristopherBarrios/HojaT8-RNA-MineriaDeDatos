@@ -155,7 +155,7 @@ lines(train_sizes, test_errors, type = "l", col = "red")
 legend("topright", legend = c("Entrenamiento", "Prueba"), col = c("blue", "red"), lty = 1)
 ```
 
-
+Como podemos obervar segun las graficas es que el modelo de Caret es un buen modelo, en comparacion con el otro, ya que esta se puede determinar a simple vista que se cumplen los requerimientos, el modelo nnet puede llegar a ser uno de los que se llaman desajustado
 
 ### 8. Para el modelo elegido de clasificación tunee los parámetros y discuta si puede mejorar todavía el modelo sin llegar a sobre ajustarlo.
 ```{r}
@@ -332,11 +332,20 @@ fig_1
 
 ### 15. Compare los resultados del mejor modelo de esta hoja para clasificar con los resultados de los algoritmos usados para clasificar de las hojas de trabajo anteriores
 
+
+En la hoja de trabajo, el modelo que construimos utilizando la biblioteca de Caret obtuvo el mejor resultado, alcanzando una precisión del 0.91. Comparado con las hojas de trabajo anteriores, este resultado es significativamente alto y es el más alto que hemos obtenido hasta ahora. Podemos citar la hoja de trabajo anterior con regresión lineal, que obtuvo un valor de 0.70, que es mucho más bajo que el valor mencionado. Aunque todas las hojas tuvieron una precisión en torno a 0.70, en este caso la precisión es más alta.
+
 ### 16. Compare los resultados del mejor modelo para predecir el precio de venta con los resultados de los algoritmos usados para el mismo propósito de las hojas de trabajo anteriores.
+
+En general, el mejor modelo que obtuvimos en esta hoja de trabajo para predecir el precio de venta fue el modelo de Caret con una efectividad de 93.59%. En comparación con los modelos de las hojas de trabajo anteriores, podemos decir que hemos obtenido un nivel estándar, ya que los resultados de todos los modelos están dentro del mismo rango y solo hay una variación de décimas.
+
+En la hoja de trabajo anterior, por ejemplo, el mejor modelo para predecir el precio de venta fue el modelo de Arbol de Desicion con una precision de 0.70, lo que sugiere que ambos modelos tienen un rendimiento similar en términos de precisión de predicción. Sin embargo, es importante destacar que los modelos de esta hoja de trabajo han utilizado una cantidad mucho mayor de características y técnicas de preprocesamiento de datos, lo que puede explicar en parte la mejora en el rendimiento en comparación con las hojas de trabajo anteriores.
+
+Podemos concluir que los modelos utilizados en esta hoja de trabajo, incluido el modelo de Curet para predecir el precio de venta, han obtenido resultados comparables o incluso superiores a los modelos de las hojas de trabajo anteriores.
 
 ### 17. Ahora que ha usado todos los modelos que hemos visto y aplicados al conjunto de datos llegue a conclusiones sobre cual es o cuales son los mejores modelos para clasificar dadas las características del conjunto de datos. ¿Cuál o cuáles son los mejores para predecir el precio de las casas? Una tabla de resumen con las métricas de los modelos le puede resultar muy útil para esto.
 
-Mejores modelos para la clasificación:
+#### Mejores modelos para la clasificación:
 
 Entre los modelos de clasificación probados, se observa que el Random Forest, el Árbol de decisión y la Regresión Logística ofrecen los mejores resultados. En particular, el Random Forest presenta la mejor precisión y la mejor sensibilidad. A continuación, se muestra una tabla resumen con las métricas de los modelos de clasificación probados:
 ```{r}
@@ -351,7 +360,7 @@ print(tabla)
 
 ```
 
-Mejores modelos para la predicción de precios:
+#### Mejores modelos para la predicción de precios:
 
 Entre los modelos de predicción de precios, se puede observar que la Regresión Lineal y las Redes Neuronales son las que ofrecen los mejores resultados. La Regresión Lineal es la que presenta la menor raíz del error cuadrático medio (RMSE), mientras que las Redes Neuronales ofrecen la mejor precisión. A continuación, se muestra una tabla resumen con las métricas de los modelos de predicción probados:
 
