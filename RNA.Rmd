@@ -296,12 +296,22 @@ En cuanto al sobreajuste, en el caso de Caret, se puede visualizar la curva de a
 
 ### 13. Para el modelo elegido de regresión tunee los parámetros y discuta si puede mejorar todavía el modelo sin llegar a sobre ajustarlo.
 ```{r}
+modelo.nn2 <- nnet(tipoDeCasa~.,data = datos,subset = corte, size=2, rang=0.1, decay=5e-4, maxit=200, linout = TRUE)
+process_timeNNet1 <- proc.time()
+
+#prediccion2 <- as.data.frame(predict(modelo.nn2, data = test[,1:6]))
+
+Highest<-apply(prediccion2, 1, function(x) colnames(prediccion2)[which.max(x)])
+test$prediccion2<-Highest
 
 Min <- sapply(datos,min)
 Max <- sapply(datos,max)
 DN <- function(x,Min,Max) {
   x*(Min-Max) + Min
 }
+
+
+plot(datos$SalePrice)
 
 ```
 
